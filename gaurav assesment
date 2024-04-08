@@ -1,1 +1,68 @@
+import requests
+def get_latest_stories(html_content):
+  """
+  Extracts the latest 6 stories from a provided HTML string.
 
+  Args:
+      html_content: The HTML content of the Time.com website.
+
+  Returns:
+      A list of the titles and read times of the latest 6 stories.
+  """
+  stories = []
+  # Split the HTML by the "Latest Stories" heading
+  split_content = html_content.split("Latest Stories")[1]
+  # Split each story by the "<li>" tag
+  for story in split_content.split("<li>"):
+    # Extract title and read time
+    if "<h3>" in story and "<p>" in story:
+      title = story.split("<h3>")[1].split("</h3>")[0].strip()
+      read_time = story.split("<p>")[1].split("</p>")[0].strip()
+      stories.append({"title": title, "read_time": read_time})
+      # Limit to 6 stories
+      if len(stories) == 6:
+        break
+  return stories
+
+# Example usage (assuming you have the HTML content of Time.com)
+# html_content = "<html>...</html>"  # Replace with actual HTML content
+# latest_stories = get_latest_stories(html_content)
+# 
+# for story in latest_stories:
+#   print(f"{story['title']} - {story['read_time']}")
+
+from bs4 import BeautifulSoup  # Assuming you can use external libraries
+
+def get_latest_stories():
+  """
+  Fetches the latest stories from Time.com and returns them as a JSON object.
+
+  Returns:
+      A JSON object containing the title and link of the 6 latest stories.
+  """
+  # Fetch the HTML content of Time.com
+  response = requests.get("https://time.com")
+  html_content = response.content
+
+  # Parse the HTML
+  soup = BeautifulSoup(html_content, 'html.parser')
+
+  # Find the section containing the latest stories
+  latest_stories_section = soup.find("section", class_="latest-stories")
+
+  # Extract story data
+  stories = []
+  for story in latest_stories_section.find_all("li"):
+    title_element = story.find("h3")
+    link_element = story.find("a")
+    if title_element and link_element:
+      stories.append({"title": title_element.text.strip(), "link": link_element["href"]})
+      if len(stories) == 6:
+        break
+
+  # Return JSON response
+  return {"stories": stories}
+
+# Example usage (assuming the function is part of a web application)
+# stories_json = get_latest_stories()
+# Send the JSON data as response to the API call
